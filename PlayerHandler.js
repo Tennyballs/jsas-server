@@ -1,4 +1,4 @@
-import { WebSocket } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 
 class PlayerData {
     constructor() {
@@ -6,19 +6,28 @@ class PlayerData {
         this.velocity = {x: null, y: null};
         this.rotation = null;
     }
+
+    getBytes()
+    {
+        const buffer = Buffer.alloc(20);
+        buffer.writeFloatLE(this.position.x, 0);
+        buffer.writeFloatLE(this.position.y, 4);
+        buffer.writeFloatLE(this.velocity.x, 8);
+        buffer.writeFloatLE(this.velocity.y, 12);
+        buffer.writeFloatLE(this.rotation, 16);
+        return buffer.buffer;
+    }
 }
 
 /**
- * @typedef {{x: number, y: number, z: number}} Vec3
+ * @typedef {{x: number, y: number}} Vec2
  */
 
 /**
  * @typedef {{
- *     position: Vec3,
- *     velocity: Vec3,
- *     rotation: Vec3,
- *     up: Vec3,
- *     gravity: number,
+ *     position: Vec2,
+ *     velocity: Vec2,
+ *     rotation: number,
  *     speed: number
  * }} PlayerData
  */
@@ -156,24 +165,34 @@ export function getPlayerListSize()
 /**
  * 
  * @param {WebSocket} ws 
+ * @param {WebSocketServer} wss 
  * @param {*} data 
  */
-export function handle(ws, data)
+export function handle(ws, wss, data)
 {
-    // console.log("recieved data");
     const buffer = new BufferedArray(data);
-    // console.log(`x: ${buffer.readF32().toFixed(3)} | y: ${buffer.readF32().toFixed(3)}`);
-    const i = playerList.findIndex((data) => {return data.ws == ws});
-    const playerData = playerList[i].data;
-    playerData.position.x = buffer.readF32();
-    playerData.position.y = buffer.readF32();
+
+    const type = buffer.readU8();
+
+    switch (type) {
+        case 0x01:
+            const i = playerList.findIndex((data) => {return data.ws == ws});
+            const playerData = playerList[i].data;
+            playerData.position.x = buffer.readF32();
+            playerData.position.y = buffer.readF32();
+            
+            playerData.velocity.x = buffer.readF32();
+            playerData.velocity.y = buffer.readF32();
+
+            playerData.rotation = buffer.readF32();
+            
+            wss.emit('data', playerData.getBytes())
+            break;
     
-    playerData.velocity.x = buffer.readF32();
-    playerData.velocity.y = buffer.readF32();
+        default:
+            console.log("Couldnt handle packet.")
+            break;
+    }
 
-    playerData.rotation = buffer.readF32();
 
-    console.log(playerData);
-
-    // ws.send([])
 }

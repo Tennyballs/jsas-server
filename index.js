@@ -3,13 +3,6 @@ import * as PlayerManager from './PlayerHandler.js';
 
 const wss = new WebSocketServer({port: 8888});
 
-/**
- * The following codes are allowed by default but any other code will be invalid
- * **** USE BINARY FOR SENDING AND RECIEVING DATA. *******
- * 0x01 -> player requests to join
- * 0x02 -> player leaves
- * 0x03 -> error (DENY ENTRY)
- */
 
 /**
  * PACKET STRUCTURE
@@ -21,7 +14,7 @@ wss.on("connection", ws => {
     console.log(`Client connected. (Player: ${PlayerManager.getPlayerListSize()})`);
 
     ws.on('message', (data) => {
-        PlayerManager.handle(ws, data);
+        PlayerManager.handle(ws, wss, data);
     })
 
     ws.on("close", (code, reason) => {
