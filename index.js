@@ -14,7 +14,7 @@ wss.on("connection", ws => {
     console.log(`Client connected. (Player: ${PlayerManager.getPlayerListSize()})`);
 
     ws.on('message', (data) => {
-        PlayerManager.handle(ws, wss, data);
+        PlayerManager.handle(ws, wss, data.buffer);
     })
 
     ws.on("close", (code, reason) => {
